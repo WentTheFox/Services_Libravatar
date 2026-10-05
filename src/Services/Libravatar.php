@@ -110,6 +110,7 @@ class Libravatar
      */
     protected ?int $size = null;
 
+    protected const HASH_REGEX = '/^([\da-f]{32}|[\da-f]{64})$/';
 
     /**
      * Composes a URL for the identifier and options passed in
@@ -224,14 +225,14 @@ class Libravatar
     }
 
     /**
-     * Normalizes the identifier (E-mail address or OpenID)
+     * Normalizes the identifier (pre-computed hash, E-mail address or OpenID)
      *
      * @param string $identifier E-Mail address or OpenID
      *
      * @return string Normalized identifier
      */
     protected function normalizeIdentifier($identifier):string {
-        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+        if (preg_match(self::HASH_REGEX, $identifier) || filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
             return strtolower($identifier);
         }
 
@@ -255,6 +256,11 @@ class Libravatar
      * @since v0.1.0
      */
     protected function identifierHash(?string $identifier, string $hash = 'md5'):string {
+        if (preg_match('/^([\da-f]{32}|[\da-f]{64})$/', $identifier)) {
+            // Identifier is likely already an md5 or sha256 hash
+            return $identifier;
+        }
+
         if ($identifier === null || filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
             // If email, we can select our algorithm. Default to md5 for
             // gravatar fallback.
