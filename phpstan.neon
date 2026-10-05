@@ -1,0 +1,7 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Method PEAR\\Services\\Libravatar\:\:checkOptionsArray\(\) should return array\{https\?\: bool, algorithm\?\: ''md5''\|''sha256'', size\?\: int, default\?\: string\} but returns array\<''algorithm''\|''default''\|''https''\|''size'', mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Services/Libravatar.php

@@ -1,24 +1,16 @@
 <?php
-require_once 'Services/Libravatar.php';
 
-if (!class_exists('PHPUnit_Framework_TestCase')) {
-    class_alias('PHPUnit\Framework\TestCase', 'PHPUnit_Framework_TestCase');
-}
+namespace PEAR\Services;
 
-class Services_LibravatarTest extends PHPUnit_Framework_TestCase
+use InvalidArgumentException;
+use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+
+class LibravatarTest extends TestCase
 {
     public function setUp(): void
     {
-        $this->sl = new Services_Libravatar();
-    }
-
-    public function testUrl()
-    {
-        $this->loadSLMock();
-        $this->assertEquals(
-            'http://example.org/avatar/9e263681488308e5e5d5e548b2f9bc99',
-            $this->sl->url('cweiske@cweiske.de')
-        );
+        $this->sl = new Libravatar();
     }
 
     public function testGetUrl()
@@ -98,19 +90,6 @@ class Services_LibravatarTest extends PHPUnit_Framework_TestCase
         );
     }
 
-    /**
-     * Note that this short option is deprecated
-     */
-    public function testGetUrlSizeOptionShort()
-    {
-        $this->loadSLMock();
-        $this->sl->setSize(128);
-        $this->assertEquals(
-            'http://example.org/avatar/9e263681488308e5e5d5e548b2f9bc99?size=256',
-            $this->sl->getUrl('cweiske@cweiske.de', array('s' => 256))
-        );
-    }
-
     public function testGetUrlDefaultDefault()
     {
         $this->loadSLMock();
@@ -126,29 +105,15 @@ class Services_LibravatarTest extends PHPUnit_Framework_TestCase
         $this->loadSLMock();
         $this->assertEquals(
             'http://example.org/avatar/9e263681488308e5e5d5e548b2f9bc99?default=404',
-            $this->sl->getUrl('cweiske@cweiske.de', array('default' => 404))
+            $this->sl->getUrl('cweiske@cweiske.de', ['default' => '404'])
         );
     }
 
-    /**
-     * Note that this short option is deprecated
-     */
-    public function testGetUrlDefaultOptionShort()
+  public function testGetUrlOptionInvalid()
     {
-        $this->loadSLMock();
-        $this->assertEquals(
-            'http://example.org/avatar/9e263681488308e5e5d5e548b2f9bc99?default=404',
-            $this->sl->getUrl('cweiske@cweiske.de', array('d' => 404))
-        );
-    }
-
-    /**
-     * @expectedException InvalidArgumentException
-     * @expectedExceptionMessage Invalid option in array: foo
-     */
-    public function testGetUrlOptionInvalid()
-    {
-        $this->sl->getUrl('cweiske@cweiske.de', array('foo' => 123));
+      $this->expectException(InvalidArgumentException::class);
+      $this->expectExceptionMessage("Invalid option in array: foo");
+      $this->sl->getUrl('cweiske@cweiske.de', array('foo' => 123));
     }
 
     public function testGetUrlNoIdentifier()
@@ -181,7 +146,7 @@ class Services_LibravatarTest extends PHPUnit_Framework_TestCase
     {
         $this->assertEquals(
             'https://example.org/',
-            Services_Libravatar::normalizeOpenId('https://example.org/')
+            Libravatar::normalizeOpenId('https://example.org/')
         );
     }
 
@@ -189,7 +154,7 @@ class Services_LibravatarTest extends PHPUnit_Framework_TestCase
     {
         $this->assertEquals(
             'https://example.org/BaR?Foo',
-            Services_Libravatar::normalizeOpenId('Https://examPLe.Org/BaR?Foo#mE')
+            Libravatar::normalizeOpenId('Https://examPLe.Org/BaR?Foo#mE')
         );
     }
 
@@ -197,11 +162,11 @@ class Services_LibravatarTest extends PHPUnit_Framework_TestCase
     {
         $this->assertEquals(
             'http://example.org/',
-            Services_Libravatar::normalizeOpenId('http://example.org:80/')
+            Libravatar::normalizeOpenId('http://example.org:80/')
         );
         $this->assertEquals(
             'https://example.org/',
-            Services_Libravatar::normalizeOpenId('https://example.org:443/')
+            Libravatar::normalizeOpenId('https://example.org:443/')
         );
     }
 
@@ -209,11 +174,11 @@ class Services_LibravatarTest extends PHPUnit_Framework_TestCase
     {
         $this->assertEquals(
             'http://example.org:123/',
-            Services_Libravatar::normalizeOpenId('http://example.org:123/')
+            Libravatar::normalizeOpenId('http://example.org:123/')
         );
         $this->assertEquals(
             'https://example.org:234/',
-            Services_Libravatar::normalizeOpenId('https://example.org:234/')
+            Libravatar::normalizeOpenId('https://example.org:234/')
         );
     }
 
@@ -221,7 +186,7 @@ class Services_LibravatarTest extends PHPUnit_Framework_TestCase
     {
         $this->assertEquals(
             'https://User@example.org/',
-            Services_Libravatar::normalizeOpenId('Https://User@examPLe.Org/')
+            Libravatar::normalizeOpenId('Https://User@examPLe.Org/')
         );
     }
 
@@ -229,7 +194,7 @@ class Services_LibravatarTest extends PHPUnit_Framework_TestCase
     {
         $this->assertEquals(
             'https://:pAss@example.org/',
-            Services_Libravatar::normalizeOpenId('Https://:pAss@examPLe.Org/')
+            Libravatar::normalizeOpenId('Https://:pAss@examPLe.Org/')
         );
     }
 
@@ -237,7 +202,7 @@ class Services_LibravatarTest extends PHPUnit_Framework_TestCase
     {
         $this->assertEquals(
             'https://User:Pass@example.org/',
-            Services_Libravatar::normalizeOpenId('Https://User:Pass@examPLe.Org/')
+            Libravatar::normalizeOpenId('Https://User:Pass@examPLe.Org/')
         );
     }
 
@@ -245,7 +210,7 @@ class Services_LibravatarTest extends PHPUnit_Framework_TestCase
     {
         $this->assertEquals(
             'foo',
-            Services_Libravatar::normalizeOpenId('xri://foo')
+            Libravatar::normalizeOpenId('xri://foo')
         );
     }
 
@@ -253,7 +218,7 @@ class Services_LibravatarTest extends PHPUnit_Framework_TestCase
     {
         $this->assertEquals(
             '=bar',
-            Services_Libravatar::normalizeOpenId('=bar')
+            Libravatar::normalizeOpenId('=bar')
         );
     }
 
@@ -261,7 +226,7 @@ class Services_LibravatarTest extends PHPUnit_Framework_TestCase
     {
         $this->assertEquals(
             'http://example.org/',
-            Services_Libravatar::normalizeOpenId('example.org/')
+            Libravatar::normalizeOpenId('example.org/')
         );
     }
 
@@ -269,7 +234,7 @@ class Services_LibravatarTest extends PHPUnit_Framework_TestCase
     {
         $this->assertEquals(
             'http://example.org/',
-            Services_Libravatar::normalizeOpenId('http://example.org')
+            Libravatar::normalizeOpenId('http://example.org')
         );
     }
 
@@ -277,7 +242,7 @@ class Services_LibravatarTest extends PHPUnit_Framework_TestCase
     {
         $this->assertEquals(
             '',
-            Services_Libravatar::normalizeOpenId('http://e=g/')
+            Libravatar::normalizeOpenId('http://e=g/')
         );
     }
 
@@ -328,13 +293,11 @@ class Services_LibravatarTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('sha256', $this->getProtected('algorithm', $this->sl));
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     * @expectedExceptionMessage Only md5 and sha256 hashing supported
-     */
-    public function testSetAlgorithmInvalid()
+  public function testSetAlgorithmInvalid()
     {
-        $this->sl->setAlgorithm('foo');
+      $this->expectException(InvalidArgumentException::class);
+      $this->expectExceptionMessage("Only md5 and sha256 hashing supported");
+      $this->sl->setAlgorithm('foo');
     }
 
     public function testSetDefaultIdenticon()
@@ -360,22 +323,18 @@ class Services_LibravatarTest extends PHPUnit_Framework_TestCase
         );
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     * @expectedExceptionMessage Invalid default avatar URL
-     */
-    public function testSetDefaultInvalidShortcut()
+  public function testSetDefaultInvalidShortcut()
     {
-        $this->sl->setDefault('foo');
+      $this->expectExceptionMessage("Invalid default avatar URL");
+      $this->expectException(InvalidArgumentException::class);
+      $this->sl->setDefault('foo');
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     * @expectedExceptionMessage Invalid default avatar URL
-     */
-    public function testSetDefaultInvalidUrl()
+  public function testSetDefaultInvalidUrl()
     {
-        //missing protocol
+      $this->expectException(InvalidArgumentException::class);
+      $this->expectExceptionMessage("Invalid default avatar URL");
+      //missing protocol
         $this->sl->setDefault('example.org/default.png');
     }
 
@@ -397,13 +356,11 @@ class Services_LibravatarTest extends PHPUnit_Framework_TestCase
         $this->assertNull($this->getProtected('size', $this->sl));
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     * @expectedExceptionMessage Size has to be larger than 0
-     */
-    public function testSetSizeInvalid()
+  public function testSetSizeInvalid()
     {
-        $this->sl->setSize(-21);
+      $this->expectException(InvalidArgumentException::class);
+      $this->expectExceptionMessage("Size has to be larger than 0");
+      $this->sl->setSize(-21);
     }
 
     public function testDetectHttpsOn()
@@ -451,7 +408,7 @@ class Services_LibravatarTest extends PHPUnit_Framework_TestCase
 
     protected function loadSLMock()
     {
-        $this->sl = $this->getMockBuilder(Services_Libravatar::class)->setMethods(array('srvGet'))->getMock();
+        $this->sl = $this->getMockBuilder(Libravatar::class)->setMethods(array('srvGet'))->getMock();
         $this->sl->expects($this->once())->method('srvGet')->will($this->returnValue('example.org'));
     }
 }

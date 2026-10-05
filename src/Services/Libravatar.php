@@ -1,27 +1,27 @@
 <?php
-/* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
+
+declare(strict_types=1);
 
 namespace PEAR\Services;
 
+use Deprecated;
+use Exception;
+use InvalidArgumentException;
+use RuntimeException;
+
 /**
  * PHP support for the Libravatar.org service.
- *
  * PHP version 5
- *
  * The MIT License
- *
  * Copyright (c) 2011 Services_Libravatar committers.
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -84,77 +84,61 @@ class Libravatar
      * @see processAlgorithm()
      * @see setAlgorithm()
      */
-    protected $algorithm = 'md5';
+    protected string $algorithm = 'md5';
 
     /**
      * Default image URL to use
      *
-     * @var string
      * @see processDefault()
      * @see setDefault()
      */
-    protected $default;
+    protected ?string $default = null;
 
     /**
      * If HTTPS URLs should be used
      *
-     * @var boolean
      * @see detectHttps()
      * @see setHttps()
      */
-    protected $https;
+    protected ?bool $https = null;
 
     /**
      * Image size in pixels
      *
-     * @var integer
      * @see processSize()
      * @see setSize()
      */
-    protected $size;
+    protected ?int $size = null;
 
 
     /**
      * Composes a URL for the identifier and options passed in
-     *
      * Compose a full URL as specified by the Libravatar API, based on the
      * email address or openid URL passed in, and the options specified.
      *
-     * @param string $identifier a string of either an email address
-     *                           or an openid url
-     * @param array  $options    an array of (bool) https, (string) algorithm
-     *                           (string) size, (string) default.
-     *                           See the set* methods.
+     * @param string $identifier email address or openid url
+     * @param array{https?: bool, algorithm?: 'md5' | 'sha256', size?: int, default?: string} $options
      *
      * @return string A string of a full URL for an avatar image
-     *
-     * @since Method available since Release 0.2.0
-     * @deprecated Use getUrl() instead
+     * @since v0.2.0
      */
-    public function url($identifier, $options = array())
-    {
+    #[Deprecated('Use getUrl() instead')]
+    public function url(string $identifier, array $options = []):string {
         return $this->getUrl($identifier, $options);
     }
 
     /**
      * Composes a URL for the identifier and options passed in
-     *
      * Compose a full URL as specified by the Libravatar API, based on the
      * email address or openid URL passed in, and the options specified.
      *
-     * @param string $identifier a string of either an email address
-     *                           or an openid url
-     * @param array  $options    an array of (bool) https, (string) algorithm
-     *                           (string) size, (string) default.
-     *                           See the set* methods.
+     * @param string|null $identifier email address or openid url
+     * @param array{https?: bool, algorithm?: 'md5' | 'sha256', size?: int, default?: string} $options
      *
-     * @return string A string of a full URL for an avatar image
-     *
-     * @since  Method available since Release 0.2.0
-     * @throws InvalidArgumentException When an invalid option is passed
+     * @throws InvalidArgumentException|Exception When an invalid option is passed
+     *@since  v0.2.0
      */
-    public function getUrl($identifier, $options = array())
-    {
+    public function getUrl(?string $identifier, array $options = []):string {
         // If no identifier has been passed, set it to a null.
         // This way, there'll always be something returned.
         if (!$identifier) {
@@ -195,7 +179,7 @@ class Libravatar
         $service  = $this->srvGet($domain, $https);
         $protocol = $https ? 'https' : 'http';
 
-        $params = array();
+        $params = [];
         if ($size !== null) {
             $params['size'] = $size;
         }
@@ -215,37 +199,24 @@ class Libravatar
         return $url;
     }
 
-    /**
-     * Checks the options array and verify that only allowed options are in it.
-     *
-     * @param array $options Array of options for getUrl()
-     *
-     * @return void
-     * @throws Exception When an invalid option is used
-     */
-    protected function checkOptionsArray($options)
+  /**
+   * Checks the options array and verify that only allowed options are in it.
+   *
+   * @param array<string, mixed> $options
+   *
+   * @return array{https?: bool, algorithm?: 'md5' | 'sha256', size?: int, default?: string}
+   */
+    protected function checkOptionsArray(array $options): array
     {
-        //this short options are deprecated!
-        if (isset($options['s'])) {
-            $options['size'] = $options['s'];
-            unset($options['s']);
-        }
-        if (isset($options['d'])) {
-            $options['default'] = $options['d'];
-            unset($options['d']);
-        }
-
-        $allowedOptions = array(
-            'algorithm' => true,
-            'default'   => true,
-            'https'     => true,
-            'size'      => true,
-        );
+        $allowedOptions = [
+            'algorithm' => ["NULL", "string"],
+            'default'   => ["NULL", "string"],
+            'https'     => ["NULL", "boolean"],
+            'size'      => ["NULL", "integer"],
+        ];
         foreach ($options as $key => $value) {
-            if (!isset($allowedOptions[$key])) {
-                throw new InvalidArgumentException(
-                    'Invalid option in array: ' . $key
-                );
+            if (!array_key_exists($key, $allowedOptions) || !in_array(gettype($value), $allowedOptions[$key], true)) {
+                throw new InvalidArgumentException("Invalid option in array: $key");
             }
         }
 
@@ -259,13 +230,12 @@ class Libravatar
      *
      * @return string Normalized identifier
      */
-    protected function normalizeIdentifier($identifier)
-    {
+    protected function normalizeIdentifier($identifier):string {
         if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
             return strtolower($identifier);
-        } else {
-            return self::normalizeOpenId($identifier);
         }
+
+        return self::normalizeOpenId($identifier);
     }
 
     /**
@@ -282,14 +252,13 @@ class Libravatar
      *
      * @return string A string hash of the identifier.
      *
-     * @since Method available since Release 0.1.0
+     * @since v0.1.0
      */
-    protected function identifierHash($identifier, $hash = 'md5')
-    {
-        if (filter_var($identifier, FILTER_VALIDATE_EMAIL) || $identifier === null) {
+    protected function identifierHash(?string $identifier, string $hash = 'md5'):string {
+        if ($identifier === null || filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
             // If email, we can select our algorithm. Default to md5 for
             // gravatar fallback.
-            return hash($hash, $identifier);
+            return hash($hash, $identifier ?? '');
         }
 
         //no email, so the identifier has to be an OpenID
@@ -299,27 +268,27 @@ class Libravatar
     /**
      * Normalizes an identifier (URI or XRI)
      *
-     * @param mixed $identifier URI or XRI to be normalized
+     * @param string $identifier URI or XRI to be normalized
      *
      * @return string Normalized Identifier.
      *                Empty string when the OpenID is invalid.
      *
      * @internal Adapted from OpenID::normalizeIdentifier()
      */
-    public static function normalizeOpenId($identifier)
-    {
+    public static function normalizeOpenId(string $identifier):string {
         // XRI
         if (preg_match('@^xri://@i', $identifier)) {
-            return preg_replace('@^xri://@i', '', $identifier);
+            return preg_replace('@^xri://@i', '', $identifier) ?? $identifier;
         }
 
-        if (in_array($identifier[0], array('=', '@', '+', '$', '!'))) {
+        if (in_array($identifier[0], ['=', '@', '+', '$', '!'])) {
             return $identifier;
         }
 
         // URL
+        $fallbackScheme = 'http';
         if (!preg_match('@^http[s]?://@i', $identifier)) {
-            $identifier = 'http://' . $identifier;
+            $identifier = $fallbackScheme . '://' . $identifier;
         }
         if (strpos($identifier, '/', 8) === false) {
             $identifier .= '/';
@@ -329,23 +298,19 @@ class Libravatar
         }
 
         $parts = parse_url($identifier);
-        $parts['scheme'] = strtolower($parts['scheme']);
+        if (!isset($parts['host'])) {
+            throw new InvalidArgumentException("No host component found in URL: $identifier");
+        }
         $parts['host']   = strtolower($parts['host']);
+        $parts['scheme'] = isset($parts['scheme']) ? strtolower($parts['scheme']) : $fallbackScheme;
 
         //http://openid.net/specs/openid-authentication-2_0.html#normalization
         return $parts['scheme'] . '://'
-            . (isset($parts['user']) ? $parts['user'] : '')
+            . ($parts['user'] ?? '')
             . (isset($parts['pass']) ? ':' . $parts['pass'] : '')
             . (isset($parts['user']) || isset($parts['pass']) ? '@' : '')
-            . $parts['host']
-            . (
-                (isset($parts['port'])
-                && $parts['scheme'] === 'http' && $parts['port'] != 80)
-                || (isset($parts['port'])
-                && $parts['scheme'] === 'https' && $parts['port'] != 443)
-                ? ':' . $parts['port'] : ''
-            )
-            . $parts['path']
+            . self::appendNonDefaultProvidedPort($parts['host'], $parts['port'] ?? null, $parts['scheme'])
+            . ($parts['path'] ?? '/')
             . (isset($parts['query']) ? '?' . $parts['query'] : '');
             //leave out fragment as requested by the spec
     }
@@ -359,10 +324,9 @@ class Libravatar
      *
      * @return string A string of the domain to use
      *
-     * @since Method available since Release 0.1.0
+     * @since v0.1.0
      */
-    protected function domainGet($identifier)
-    {
+    protected function domainGet(?string $identifier):?string {
         if ($identifier === null) {
             return null;
         }
@@ -381,21 +345,19 @@ class Libravatar
             return null;
         }
 
-        $domain = $url['host'];
-        if (isset($url['port']) && $url['scheme'] === 'http'
-            && $url['port'] != 80
-            || isset($url['port']) && $url['scheme'] === 'https'
-            && $url['port'] != 443
-        ) {
-            $domain .= ':' . $url['port'];
+        return self::appendNonDefaultProvidedPort($url['host'], $url['port'] ?? null, $url['scheme'] ?? null);
+    }
+
+    protected static function appendNonDefaultProvidedPort(string $host, ?int $port, ?string $scheme): string {
+        if ($port === null || ($scheme === 'https' && $port === 443) || ($scheme === 'http' && $port === 80)) {
+            return $host;
         }
 
-        return $domain;
+        return "$host:$port";
     }
 
     /**
      * Get the target to use.
-     *
      * Get the SRV record, filtered by priority and weight. If our domain
      * has no SRV records, fall back to Libravatar.org
      *
@@ -404,13 +366,11 @@ class Libravatar
      * @param boolean $https  Whether or not to look for https records
      *
      * @return string The target URL.
-     *
-     * @since Method available since Release 0.1.0
+     * @since v0.1.0
      */
-    protected function srvGet($domain, $https = false)
-    {
+    protected function srvGet(?string $domain, ?bool $https = false):string {
         // Are we going secure? Set up a fallback too.
-        if (isset($https) && $https === true) {
+        if ($https === true) {
             $subdomain = '_avatars-sec._tcp.';
             $fallback  = 'seccdn.';
             $port      = 443;
@@ -436,7 +396,7 @@ class Libravatar
         }
 
         // Sort by the priority. We must get the lowest.
-        usort($srv, array($this, 'comparePriority'));
+        usort($srv, [$this, 'comparePriority']);
 
         $top = $srv[0];
         $sum = 0;
@@ -446,17 +406,18 @@ class Libravatar
         // except that all those with weight 0 are placed at the beginning of
         // the list."
         shuffle($srv);
-        $srvs = array();
+        $srvSorted = [];
         foreach ($srv as $s) {
-            if ($s['weight'] == 0) {
-                array_unshift($srvs, $s);
+            if ((int)$s['weight'] === 0) {
+                array_unshift($srvSorted, $s);
             } else {
-                array_push($srvs, $s);
+              $srvSorted[] = $s;
             }
         }
 
-        foreach ($srvs as $s) {
-            if ($s['pri'] == $top['pri']) {
+        $pri = [];
+        foreach ($srvSorted as $s) {
+            if ((int)$s['pri'] === (int)$top['pri']) {
                 // "Compute the sum of the weights of those RRs"
                 $sum += (int) $s['weight'];
                 // "and with each RR associate the running sum in the selected
@@ -467,7 +428,7 @@ class Libravatar
 
         // "Then choose a uniform random number between 0 and the sum computed
         // (inclusive)"
-        $random = rand(0, $sum);
+        $random = random_int(0, $sum);
 
         // "and select the RR whose running sum value is the first in the selected
         // order which is greater than or equal to the random number selected"
@@ -480,19 +441,21 @@ class Libravatar
                 return $target;
             }
         }
+
+        throw new RuntimeException('Could not resolve target server');
     }
 
     /**
      * Sorting function for record priorities.
      *
-     * @param mixed $a A mixed value passed by usort()
-     * @param mixed $b A mixed value passed by usort()
+     * @param array{pri: int} $a A mixed value passed by usort()
+     * @param array{pri: int} $b A mixed value passed by usort()
      *
-     * @return mixed The result of the comparison
+     * @return int The result of the comparison
      *
-     * @since Method available since Release 0.1.0
+     * @since v0.1.0
      */
-    protected function comparePriority($a, $b)
+    protected function comparePriority(array $a, array $b): int
     {
         return $a['pri'] - $b['pri'];
     }
@@ -506,8 +469,7 @@ class Libravatar
      *
      * @return self
      */
-    public function detectHttps()
-    {
+    public function detectHttps():Libravatar {
         $this->setHttps(
             isset($_SERVER['HTTPS']) && $_SERVER['HTTPS']
         );
@@ -524,8 +486,7 @@ class Libravatar
      *
      * @throws InvalidArgumentException When an unsupported algorithm is given
      */
-    protected function processAlgorithm($algorithm)
-    {
+    protected function processAlgorithm($algorithm):string {
         $algorithm = (string)$algorithm;
         if ($algorithm !== 'md5' && $algorithm !== 'sha256') {
             throw new InvalidArgumentException(
@@ -552,13 +513,10 @@ class Libravatar
      *
      * @throws InvalidArgumentException When an invalid URL is given
      */
-    protected function processDefault($url)
-    {
+    protected function processDefault(?string $url):?string {
         if ($url === null) {
-            return $url;
+            return null;
         }
-
-        $url = (string)$url;
 
         switch ($url) {
         case '404':
@@ -589,13 +547,11 @@ class Libravatar
      *
      * @throws InvalidArgumentException When a size <= 0 is given
      */
-    protected function processSize($size)
-    {
+    protected function processSize(?int $size):?int {
         if ($size === null) {
-            return $size;
+            return null;
         }
 
-        $size = (int)$size;
         if ($size <= 0) {
             throw new InvalidArgumentException('Size has to be larger than 0');
         }
@@ -613,8 +569,7 @@ class Libravatar
      * @return self
      * @throws InvalidArgumentException When an unsupported algorithm is given
      */
-    public function setAlgorithm($algorithm)
-    {
+    public function setAlgorithm($algorithm):Libravatar {
         $this->algorithm = $this->processAlgorithm($algorithm);
 
         return $this;
@@ -624,7 +579,7 @@ class Libravatar
      * Set the default URL to use when no avatar image can be found.
      * If none is set, the gravatar logo is returned.
      *
-     * @param string $url Full URL to use OR one of the following:
+     * @param string|null $url Full URL to use OR one of the following:
      *                    - "404" - give a "404 File not found" instead of an image
      *                    - "mm"
      *                    - "identicon"
@@ -632,11 +587,9 @@ class Libravatar
      *                    - "wavatar"
      *                    - "retro"
      *
-     * @return self
      * @throws InvalidArgumentException When an invalid URL is given
      */
-    public function setDefault($url)
-    {
+    public function setDefault(?string $url): self {
         $this->default = $this->processDefault($url);
 
         return $this;
@@ -651,8 +604,7 @@ class Libravatar
      *
      * @see detectHttps()
      */
-    public function setHttps($useHttps)
-    {
+    public function setHttps($useHttps):Libravatar {
         $this->https = (bool)$useHttps;
 
         return $this;
@@ -664,11 +616,9 @@ class Libravatar
      *
      * @param integer $size Size (width and height) of the image
      *
-     * @return self
      * @throws InvalidArgumentException When a size <= 0 is given
      */
-    public function setSize($size)
-    {
+    public function setSize(?int $size): self {
         $this->size = $this->processSize($size);
 
         return $this;

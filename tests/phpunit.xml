@@ -1,4 +1,4 @@
-<phpunit strict="true">
+<phpunit>
  <php>
   <includePath>../</includePath>
  </php>
