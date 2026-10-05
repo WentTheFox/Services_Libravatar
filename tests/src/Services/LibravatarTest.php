@@ -118,9 +118,9 @@ class LibravatarTest extends TestCase
 
     public function testGetUrlNoIdentifier()
     {
-        $this->loadSLMock();
+        $this->loadSLMock(expectSrvGet: false);
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage("Hash requested for empty identifier: false");
+        $this->expectExceptionMessage("Hash requested for empty identifier: NULL");
         $this->sl->getUrl(false);
     }
 
@@ -404,10 +404,12 @@ class LibravatarTest extends TestCase
         return $method->invokeArgs($this->sl, $args);
     }
 
-    protected function loadSLMock()
+    protected function loadSLMock(bool $expectSrvGet = true)
     {
         $this->sl = $this->getMockBuilder(Libravatar::class)->setMethods(array('srvGet'))->getMock();
-        $this->sl->expects($this->once())->method('srvGet')->will($this->returnValue('example.org'));
+        if ($expectSrvGet) {
+            $this->sl->expects($this->once())->method('srvGet')->will($this->returnValue('example.org'));
+        }
     }
 }
 
