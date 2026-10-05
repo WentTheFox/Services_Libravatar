@@ -1,11 +1,11 @@
 {
-    "name": "pear/services_libravatar",
-    "homepage": "http://pear.php.net/package/Services_Libravatar",
+    "name": "wentthefox/services_libravatar",
+    "homepage": "http://github.com/WentTheFox/Services_Libravatar",
     "description": "API interfacing class for libravatar.org",
     "license": "MIT",
     "support": {
-        "issues": "http://pear.php.net/bugs/search.php?cmd=display&package_name[]=Services_Libravatar",
-        "source": "https://github.com/pear/Services_Libravatar"
+        "issues": "http://github.com/WentTheFox/Services_Libravatar/issues",
+        "source": "http://github.com/WentTheFox/Services_Libravatar"
     },
     "authors": [
         {
