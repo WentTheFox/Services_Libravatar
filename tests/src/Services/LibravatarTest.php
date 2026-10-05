@@ -119,10 +119,9 @@ class LibravatarTest extends TestCase
     public function testGetUrlNoIdentifier()
     {
         $this->loadSLMock();
-        $this->assertEquals(
-            'http://example.org/avatar/d41d8cd98f00b204e9800998ecf8427e',
-            $this->sl->getUrl(false)
-        );
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Hash requested for empty identifier: false");
+        $this->sl->getUrl(false);
     }
 
     public function testGetUrlOpenId()
@@ -136,10 +135,9 @@ class LibravatarTest extends TestCase
 
     public function testGetUrlInvalid()
     {
-        $this->assertEquals(
-            'http://cdn.libravatar.org/avatar/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-            $this->sl->getUrl('adam@adam-laptop.(none)')
-        );
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Hash requested for empty identifier: ");
+        $this->sl->getUrl('adam@adam-laptop.(none)');
     }
 
     public function testNormalizeOpenId()

@@ -141,12 +141,7 @@ class Libravatar
      */
     public function getUrl(?string $identifier, array $options = []):string {
         // If no identifier has been passed, set it to a null.
-        // This way, there'll always be something returned.
-        if (!$identifier) {
-            $identifier = null;
-        } else {
-            $identifier = $this->normalizeIdentifier($identifier);
-        }
+        $identifier = !$identifier ? null : $this->normalizeIdentifier($identifier);
 
         // Load all options
         $options = $this->checkOptionsArray($options);
@@ -231,7 +226,7 @@ class Libravatar
      *
      * @return string Normalized identifier
      */
-    protected function normalizeIdentifier($identifier):string {
+    protected function normalizeIdentifier(string $identifier):string {
         if (preg_match(self::HASH_REGEX, $identifier) || filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
             return strtolower($identifier);
         }
@@ -254,10 +249,11 @@ class Libravatar
      * @return string A string hash of the identifier.
      *
      * @since v0.1.0
+     * @throws InvalidArgumentException
      */
     protected function identifierHash(?string $identifier, string $hash = 'md5'):string {
         if (empty($identifier)) {
-            throw new \RuntimeException("Hash requested for empty identifier ($identifier)");
+            throw new InvalidArgumentException('Hash requested for empty identifier: ' . var_export($identifier, true));
         }
 
         if (preg_match('/^([\da-f]{32}|[\da-f]{64})$/', $identifier)) {
