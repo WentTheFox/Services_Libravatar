@@ -20,8 +20,8 @@
         }
     ],
     "autoload": {
-        "psr-0": {
-            "Services": "./Services/"
+        "psr-4": {
+            "PEAR\\Services\\": "./Services/"
         }
     },
     "include-path": [

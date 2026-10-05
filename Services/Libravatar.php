@@ -1,5 +1,8 @@
 <?php
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
+
+namespace PEAR\Services;
+
 /**
  * PHP support for the Libravatar.org service.
  *
@@ -72,7 +75,7 @@
  * @link      http://pear.php.net/package/Services_Libravatar
  * @since     Class available since Release 0.1.0
  */
-class Services_Libravatar
+class Libravatar
 {
     /**
      * Hashing algorithm to use
