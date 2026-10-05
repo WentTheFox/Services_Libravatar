@@ -256,15 +256,19 @@ class Libravatar
      * @since v0.1.0
      */
     protected function identifierHash(?string $identifier, string $hash = 'md5'):string {
+        if (empty($identifier)) {
+            throw new \RuntimeException("Hash requested for empty identifier ($identifier)");
+        }
+
         if (preg_match('/^([\da-f]{32}|[\da-f]{64})$/', $identifier)) {
             // Identifier is likely already an md5 or sha256 hash
             return $identifier;
         }
 
-        if ($identifier === null || filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
             // If email, we can select our algorithm. Default to md5 for
             // gravatar fallback.
-            return hash($hash, $identifier ?? '');
+            return hash($hash, $identifier);
         }
 
         //no email, so the identifier has to be an OpenID
