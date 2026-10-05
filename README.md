@@ -1,5 +1,5 @@
 # Services_Libravatar
-A PHP 8.4+ library to the `Libravatar <https://www.libravatar.org/>`_ service
+A PHP 8.4+ library to the [Libravatar](https://www.libravatar.org/) service
 that delivers avatar pictures to other websites:
 It gives you image URLs for email addresses.
 
